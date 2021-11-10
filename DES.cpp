@@ -290,6 +290,24 @@ vector<string> generate_keys(string key){
     return ans;
 }
 
+// Help from the internet
+string s_box_lookup(string x){
+    string ans = "";
+    for (int i = 0; i < 8; i++) {
+        int row = 2 * int(x[i * 6] - '0') + int(x[i * 6 + 5] - '0');
+        int col = 8 * int(x[i * 6 + 1] - '0') + 4 * int(x[i * 6 + 2] - '0') + 2 * int(x[i * 6 + 3] - '0') + int(x[i * 6 + 4] - '0');
+        int val = s_box_table[i][row][col];
+        ans += char(val / 8 + '0');
+        val = val % 8;
+        ans += char(val / 4 + '0');
+        val = val % 4;
+        ans += char(val / 2 + '0');
+        val = val % 2;
+        ans += char(val + '0');
+    }
+    return ans;
+}
+
 string encrypt(string message, string key, vector<string>& round_keys){
     message = permute(message, initial_permutation, sizeof(initial_permutation) / sizeof(initial_permutation[0]));
     string L = message.substr(0, 32);
@@ -302,19 +320,7 @@ string encrypt(string message, string key, vector<string>& round_keys){
 
         string x = string_xor(round_key, right_expanded);
         
-        string y = "";
-        for (int i = 0; i < 8; i++) {
-            int row = 2 * int(x[i * 6] - '0') + int(x[i * 6 + 5] - '0');
-            int col = 8 * int(x[i * 6 + 1] - '0') + 4 * int(x[i * 6 + 2] - '0') + 2 * int(x[i * 6 + 3] - '0') + int(x[i * 6 + 4] - '0');
-            int val = s_box_table[i][row][col];
-            y += char(val / 8 + '0');
-            val = val % 8;
-            y += char(val / 4 + '0');
-            val = val % 4;
-            y += char(val / 2 + '0');
-            val = val % 2;
-            y += char(val + '0');
-        }
+        string y = s_box_lookup(x);
 
         y = permute(y, straight_permutation_table, sizeof(straight_permutation_table) / sizeof(straight_permutation_table[0]));
          
