@@ -174,6 +174,12 @@ char bin2hex_util(string bin){
     return 'F';
 }
 
+char toupper(char x){
+    if(x >= 'a' && x <= 'z')
+        return x - 32;
+    return x;
+}
+
 void reverse(string* x, int size){
     for(int i = 0; i < size / 2; i++){
         string temp = x[i];
@@ -229,7 +235,9 @@ string hex2bin(char hex){
         case 'E':
             return "1110";
         case 'F':
-            return "1111";   
+            return "1111";
+        default:
+            return "0000";
     }
 }
 
@@ -291,11 +299,9 @@ string* generate_keys(string key){
  
         ans[i] = round_key;
     }
-    
     return ans;
 }
 
-// Help from the internet
 string s_box_lookup(string x){
     string ans = "";
     for (int i = 0; i < 8; i++) {
@@ -332,7 +338,9 @@ string encrypt(string message, string key, string* round_keys){
         x = string_xor(y, L);
         L = x;
         if (i != 15) {
-            swap(L, R);
+            string temp = L;
+            L = R;
+            R = temp;
         }
     }
 
