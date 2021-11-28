@@ -1,7 +1,9 @@
 #include <iostream>
+#include <iomanip>
 #include <cstdint>
+#include <bitset>
 using namespace std;
-   
+
 int PC1[56] = {
     57, 49, 41, 33, 25, 17, 9, 
     1, 58, 50, 42, 34, 26, 18,
@@ -34,7 +36,7 @@ int d_box_table[48] = {
     28, 29, 28, 29, 30, 31, 32, 1,
 };
 
-int s_box_table[8][4][16] =  { 
+int s_box_table[8][64] =  { 
     { 
         14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
         0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
@@ -125,248 +127,105 @@ int key_compression_table[48] = {
     46, 42, 50, 36, 29, 32,
 };
 
-uint64_t read_from_input(char* input){
-    uint64_t ans = 0;
-    for(uint8_t i = 0; i < 16; i++){
-        if(input[i] >= '0' && input[i] <= '9'){
-            ans = (ans << 4) | (input[i] - '0');
-        }
-        else{
-            ans = (ans << 4) | (input[i] - 'A' + 10);
-        }
-    }
-    return ans;
-}
-
-char bin2hex_util(string bin){
-    if(bin == "0000"){
-        return '0';
-    }
-    if(bin == "0001"){
-        return '1';
-    }
-    if(bin == "0010"){
-        return '2';
-    }
-    if(bin == "0011"){
-        return '3';
-    }
-    if(bin == "0100"){
-        return '4';
-    }
-    if(bin == "0101"){
-        return '5';
-    }
-    if(bin == "0110"){
-        return '6';
-    }
-    if(bin == "0111"){
-        return '7';
-    }
-    if(bin == "1000"){
-        return '8';
-    }
-    if(bin == "1001"){
-        return '9';
-    }
-    if(bin == "1010"){
-        return 'A';
-    }
-    if(bin == "1011"){
-        return 'B';
-    }
-    if(bin == "1100"){
-        return 'C';
-    }
-    if(bin == "1101"){
-        return 'D';
-    }
-    if(bin == "1110"){
-        return 'E';
-    }
-    return 'F';
-}
-
-char toupper(char x){
-    if(x >= 'a' && x <= 'z')
-        return x - 32;
-    return x;
-}
-
-void reverse(string* x, int size){
+void reverse(uint64_t* x, int size){
     for(int i = 0; i < size / 2; i++){
-        string temp = x[i];
+        uint64_t temp = x[i];
         x[i] = x[size - i - 1];
         x[size - i -1] = temp;
     }
 }
 
-string bin2hex(string bin){
-    string hex = "";
-    for (int i = 0; i < bin.length(); i += 4) {
-        string ch = "";
-        ch += bin[i];
-        ch += bin[i + 1];
-        ch += bin[i + 2];
-        ch += bin[i + 3];
-        hex += bin2hex_util(ch);
-    }
-    return hex;
-}
-
-string hex2bin(char hex){
-    hex = toupper(hex);
-    switch(hex){
-        case '0':
-            return "0000";
-        case '1':
-            return "0001";
-        case '2':
-            return "0010";
-        case '3':
-            return "0011";
-        case '4':
-            return "0100";
-        case '5':
-            return "0101";
-        case '6':
-            return "0110";
-        case '7':
-            return "0111";
-        case '8':
-            return "1000";
-        case '9':
-            return "1001";
-        case 'A':
-            return "1010";
-        case 'B':
-            return "1011";
-        case 'C':
-            return "1100";
-        case 'D':
-            return "1101";
-        case 'E':
-            return "1110";
-        case 'F':
-            return "1111";
-        default:
-            return "0000";
-    }
-}
-
-string hex2bin(string hex){
-    string bin;
-    for(char hex_char: hex){
-        bin += hex2bin(hex_char);
-    }
-    return bin;
-}
-
-string string_xor(string x1, string x2){
-    string ans = "";
-    for (int i = 0; i < x1.size(); i++) {
-        if (x1[i] == x2[i]) {
-            ans += '0';
+uint64_t read_from_input(char* input, uint8_t size){
+    uint64_t ans = 0;
+    for(uint8_t i = 0; i < size; i++){
+        if(input[i] >= '0' && input[i] <= '9'){
+            ans = (ans << 4) | (input[i] - '0');
         }
-        else {
-            ans += '1';
+        else if(input[i] >= 'a' && input[i] <= 'f'){
+            ans = (ans << 4) | (input[i] - 'a' + 10);
+        }
+        else if(input[i] >= 'A' && input[i] <= 'F'){
+            ans = (ans << 4) | (input[i] - 'A' + 10);
+        }
+        else{
+            throw "Incorrect Hex Value";
         }
     }
     return ans;
 }
 
-string shift_left(string bin, int k){
-    string right = "";
-    string ans = "";
-    for(int i = 0; i < k; i++)
-        right += bin[i];
-    for(int i = k; i < bin.length(); i++)
-        ans += bin[i];
-    for(int i = 0; i < k; i++)
-        ans += right[i];
-    return ans;
-}
-
-string permute(string key, int permutation_combination[], int size){
-    string ans = "";
-    for(int i = 0; i < size; i++)
-        ans += 'X';
-    for(int i = 0; i < size; i++){
-        ans[i] = key[permutation_combination[i] - 1];
+uint64_t permute(uint64_t x, int* permutation, uint8_t size, uint8_t bit_num){
+    uint64_t ans = 0;
+    for(uint8_t i = 0; i < size; i++){
+        bool bit = ((uint64_t(1) << (bit_num - permutation[i]) & x) != 0);
+        ans = ans | (uint64_t(bit) << (size - i - 1));
     }
     return ans;
 }
 
-string* generate_keys(string key){
-    string* ans = new string[16];
-    string L = key.substr(0, 28);
-    string R = key.substr(28, 28);
+uint64_t* generate_keys(uint64_t key){
+    uint64_t* ans = new uint64_t[16];
+    uint32_t L = (key >> 28) & 0x000000000FFFFFFF;
+    uint32_t R = key & 0x000000000FFFFFFF;
+    for (uint8_t i = 0; i < 16; i++) {
+        if(shift_table[i] == 1){
+            L = (0x0FFFFFFF & (L << 1)) | ((L & 0x08000000) >> 27);
+            R = (0x0FFFFFFF & (R << 1)) | ((R & 0x08000000) >> 27);
+        }
+        else{
+            L = (0x0FFFFFFF & (L << 2)) | ((L & 0x0C000000) >> 26);
+            R = (0x0FFFFFFF & (R << 2)) | ((R & 0x0C000000) >> 26);
+        }
+        uint64_t round_key = (uint64_t(L) << 28) | uint64_t(R);
  
-    for (int i = 0; i < 16; i++) {
-        L = shift_left(L, shift_table[i]);
-        R = shift_left(R, shift_table[i]);
- 
-        string round_key = L + R;
- 
-        round_key = permute(round_key, key_compression_table, sizeof(key_compression_table) / sizeof(key_compression_table[0]));
+        round_key = permute(round_key, key_compression_table, sizeof(key_compression_table) / sizeof(key_compression_table[0]), 56);
  
         ans[i] = round_key;
     }
     return ans;
 }
 
-string s_box_lookup(string x){
-    string ans = "";
-    for (int i = 0; i < 8; i++) {
-        int row = 2 * int(x[i * 6] - '0') + int(x[i * 6 + 5] - '0');
-        int col = 8 * int(x[i * 6 + 1] - '0') + 4 * int(x[i * 6 + 2] - '0') + 2 * int(x[i * 6 + 3] - '0') + int(x[i * 6 + 4] - '0');
-        int val = s_box_table[i][row][col];
-        ans += char(val / 8 + '0');
-        val = val % 8;
-        ans += char(val / 4 + '0');
-        val = val % 4;
-        ans += char(val / 2 + '0');
-        val = val % 2;
-        ans += char(val + '0');
+uint32_t s_box_lookup(uint64_t x){
+    uint8_t row, column;
+    uint32_t ans;
+    for(uint8_t i = 0; i < 8; i++){
+        row = (uint8_t) ((x & (0x0000840000000000 >> 6 * i)) >> 42 - 6 * i);
+        row = (row >> 4) | row & 0x01;
+        
+        column = (uint8_t) ((x & (0x0000780000000000 >> 6 * i)) >> 43 - 6 * i);
+        
+        ans <<= 4;
+        ans |= (uint32_t) (s_box_table[i][16 * row + column] & 0x0f);
     }
     return ans;
 }
 
-string encrypt(string message, string key, string* round_keys){
-    message = permute(message, initial_permutation, sizeof(initial_permutation) / sizeof(initial_permutation[0]));
-    string L = message.substr(0, 32);
-    string R = message.substr(32, 32);
+uint64_t encrypt(uint64_t message, uint64_t key, uint64_t* round_keys){
+    message = permute(message, initial_permutation, sizeof(initial_permutation) / sizeof(initial_permutation[0]), 64);
+    uint32_t L = (message >> 32) & 0x00000000FFFFFFFF;
+    uint32_t R = message & 0x00000000FFFFFFFF;
     
-    for(int i = 0; i < 16; i++){
-        string right_expanded = permute(R, d_box_table, sizeof(d_box_table) / sizeof(d_box_table[0]));
-
-        string round_key = round_keys[i];
-
-        string x = string_xor(round_key, right_expanded);
-        
-        string y = s_box_lookup(x);
-
-        y = permute(y, straight_permutation_table, sizeof(straight_permutation_table) / sizeof(straight_permutation_table[0]));
-         
-        x = string_xor(y, L);
+    for(uint8_t i = 0; i < 16; i++){
+        uint64_t right_expanded = permute(R, d_box_table, sizeof(d_box_table) / sizeof(d_box_table[0]), 32);
+        uint64_t round_key = round_keys[i];
+        uint64_t x = round_key ^ right_expanded;
+        uint32_t y = s_box_lookup(x);
+        y = permute(y, straight_permutation_table, sizeof(straight_permutation_table) / sizeof(straight_permutation_table[0]), 32);
+        x = y ^ L;
         L = x;
         if (i != 15) {
-            string temp = L;
+            uint32_t temp = L;
             L = R;
             R = temp;
         }
     }
 
-    string result = L + R;
-  
-    result = permute(result, final_permutation_table, sizeof(final_permutation_table) / sizeof(final_permutation_table[0]));
-    
-    result = bin2hex(result);
-    
+    uint64_t result = (uint64_t(L) << 32) | uint64_t(R);
+    result = permute(result, final_permutation_table, sizeof(final_permutation_table) / sizeof(final_permutation_table[0]), 64);
     return result;
 }
 
-string decrypt(string cipher, string key, string* round_keys){
+uint64_t decrypt(uint64_t cipher, uint64_t key, uint64_t* round_keys){
     reverse(round_keys, 16);
     return encrypt(cipher, key, round_keys);
 }
@@ -382,15 +241,18 @@ int main(int argc, char** argv){
             cout << "Enter correct number of arguments\n";
             return 0;
         }
-        string message = argv[2];
-        string key = argv[3];
+        try{
+            uint64_t message = read_from_input(argv[2], 16);
+            uint64_t key = read_from_input(argv[3], 16);
 
-        cout << read_from_input(argv[2]);
-        // message = hex2bin(message);
-        // key = permute(hex2bin(key), PC1, sizeof(PC1) / sizeof(PC1[0]));
-        // string* round_keys = generate_keys(key);
-        // cout << encrypt(message, key, round_keys) << '\n';
-        // delete[] round_keys;
+            key = permute(key, PC1, sizeof(PC1) / sizeof(PC1[0]), 64);
+            uint64_t* keys = generate_keys(key);
+            cout << uppercase << hex << encrypt(message, key, keys) << '\n';
+        }
+        catch(const char* msg){
+            cout << msg << '\n';
+            return 0;
+        }
     }
 
     else if(string(argv[1]) == "decrypt"){
@@ -398,14 +260,18 @@ int main(int argc, char** argv){
             cout << "Enter correct number of arguments\n";
             return 0;
         }
-        string cipher = argv[2];
-        string key = argv[3];
-
-        cipher = hex2bin(cipher);
-        key = permute(hex2bin(key), PC1, sizeof(PC1) / sizeof(PC1[0]));
-        string* round_keys = generate_keys(key);
-        cout << decrypt(cipher, key, round_keys) << '\n';
-        delete[] round_keys;
+        try{
+            uint64_t cipher = read_from_input(argv[2], 16);
+            uint64_t key = read_from_input(argv[3], 16);
+            
+            key = permute(key, PC1, sizeof(PC1) / sizeof(PC1[0]), 64);
+            uint64_t* keys = generate_keys(key);
+            cout << uppercase << hex << decrypt(cipher, key, keys) << '\n';
+        }
+        catch(const char* msg){
+            cout << msg << '\n';
+            return 0;
+        }
     }
 
     else{
