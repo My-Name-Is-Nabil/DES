@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <cstdint>
 using namespace std;
    
 int PC1[56] = {
@@ -124,6 +124,19 @@ int key_compression_table[48] = {
     44, 49, 39, 56, 34, 53,
     46, 42, 50, 36, 29, 32,
 };
+
+uint64_t read_from_input(char* input){
+    uint64_t ans = 0;
+    for(uint8_t i = 0; i < 16; i++){
+        if(input[i] >= '0' && input[i] <= '9'){
+            ans = (ans << 4) | (input[i] - '0');
+        }
+        else{
+            ans = (ans << 4) | (input[i] - 'A' + 10);
+        }
+    }
+    return ans;
+}
 
 char bin2hex_util(string bin){
     if(bin == "0000"){
@@ -359,7 +372,6 @@ string decrypt(string cipher, string key, string* round_keys){
 }
 
 int main(int argc, char** argv){
-    
     if(argc == 1){
         cout << "Enter command\n";
         return 0;
@@ -373,11 +385,12 @@ int main(int argc, char** argv){
         string message = argv[2];
         string key = argv[3];
 
-        message = hex2bin(message);
-        key = permute(hex2bin(key), PC1, sizeof(PC1) / sizeof(PC1[0]));
-        string* round_keys = generate_keys(key);
-        cout << encrypt(message, key, round_keys) << '\n';
-        delete[] round_keys;
+        cout << read_from_input(argv[2]);
+        // message = hex2bin(message);
+        // key = permute(hex2bin(key), PC1, sizeof(PC1) / sizeof(PC1[0]));
+        // string* round_keys = generate_keys(key);
+        // cout << encrypt(message, key, round_keys) << '\n';
+        // delete[] round_keys;
     }
 
     else if(string(argv[1]) == "decrypt"){
