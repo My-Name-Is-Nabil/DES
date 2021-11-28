@@ -2,6 +2,12 @@
 #include <iomanip>
 #include <cstdint>
 #include <bitset>
+#ifdef __GNUC__
+#define __rdtsc __builtin_ia32_rdtsc
+#else
+#include <intrin.h>
+#endif
+
 using namespace std;
 
 int PC1[56] = {
@@ -136,22 +142,19 @@ void reverse(uint64_t* x, int size){
 }
 
 uint64_t read_from_input(char* input, uint8_t size){
-    uint64_t ans = 0;
-    for(uint8_t i = 0; i < size; i++){
-        if(input[i] >= '0' && input[i] <= '9'){
-            ans = (ans << 4) | (input[i] - '0');
-        }
-        else if(input[i] >= 'a' && input[i] <= 'f'){
-            ans = (ans << 4) | (input[i] - 'a' + 10);
-        }
-        else if(input[i] >= 'A' && input[i] <= 'F'){
-            ans = (ans << 4) | (input[i] - 'A' + 10);
-        }
+    uint64_t ret = 0;
+    for(;;++input){
+        uint8_t dec = *input - '0';
+        if(dec < 10)
+            ret = ret << 4 | dec;
         else{
-            throw "Incorrect Hex Value";
+            uint8_t upper=(*input & 0xDF) - 'A';
+            if(upper > 5)
+                break;
+            ret = ret << 4 | upper + 10;
         }
     }
-    return ans;
+    return ret;
 }
 
 uint64_t permute(uint64_t x, int* permutation, uint8_t size, uint8_t bit_num){
@@ -242,12 +245,19 @@ int main(int argc, char** argv){
             return 0;
         }
         try{
+            long long t1 = __rdtsc();
+
             uint64_t message = read_from_input(argv[2], 16);
             uint64_t key = read_from_input(argv[3], 16);
 
             key = permute(key, PC1, sizeof(PC1) / sizeof(PC1[0]), 64);
             uint64_t* keys = generate_keys(key);
-            cout << uppercase << hex << encrypt(message, key, keys) << '\n';
+            uint64_t cipher = encrypt(message, key, keys);
+            
+            long long t2 = __rdtsc();
+            
+            cout << uppercase << hex << cipher << '\n';
+            cout << dec << "Cycles: " << t2-t1 << '\n';
         }
         catch(const char* msg){
             cout << msg << '\n';
@@ -261,12 +271,19 @@ int main(int argc, char** argv){
             return 0;
         }
         try{
+            long long t1 = __rdtsc();
+
             uint64_t cipher = read_from_input(argv[2], 16);
             uint64_t key = read_from_input(argv[3], 16);
-            
+
             key = permute(key, PC1, sizeof(PC1) / sizeof(PC1[0]), 64);
             uint64_t* keys = generate_keys(key);
-            cout << uppercase << hex << decrypt(cipher, key, keys) << '\n';
+            uint64_t message = decrypt(cipher, key, keys);
+            
+            long long t2 = __rdtsc();
+            
+            cout << uppercase << hex << message << '\n';
+            cout << dec << "Cycles: " << t2-t1 << '\n';
         }
         catch(const char* msg){
             cout << msg << '\n';
