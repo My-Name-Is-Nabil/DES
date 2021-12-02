@@ -245,13 +245,15 @@ int main(int argc, char** argv){
             return 0;
         }
         try{
-            long long t1 = __rdtsc();
 
             uint64_t message = read_from_input(argv[2], 16);
             uint64_t key = read_from_input(argv[3], 16);
 
             key = permute(key, PC1, sizeof(PC1) / sizeof(PC1[0]), 64);
             uint64_t* keys = generate_keys(key);
+            
+            long long t1 = __rdtsc();
+            
             uint64_t cipher = encrypt(message, key, keys);
             
             long long t2 = __rdtsc();
@@ -271,13 +273,15 @@ int main(int argc, char** argv){
             return 0;
         }
         try{
-            long long t1 = __rdtsc();
 
             uint64_t cipher = read_from_input(argv[2], 16);
             uint64_t key = read_from_input(argv[3], 16);
 
             key = permute(key, PC1, sizeof(PC1) / sizeof(PC1[0]), 64);
             uint64_t* keys = generate_keys(key);
+            
+            long long t1 = __rdtsc();
+            
             uint64_t message = decrypt(cipher, key, keys);
             
             long long t2 = __rdtsc();
